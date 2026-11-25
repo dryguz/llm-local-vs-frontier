@@ -1,10 +1,20 @@
-import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js?v=0.3";
+import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js?v=0.4";
 
-const SCENARIOS = {
-  // 5000 words of source text ≈ 6.7k tokens (≈1.33 tokens/word in English; other languages usually more)
-  brief: { inputTokens: 7000, outputTokens: 270, reasoningTokens: 1500 },
-  chat:  { inputTokens: 500,  outputTokens: 300, reasoningTokens: 500 },
-  doc:   { inputTokens: 33000, outputTokens: 800, reasoningTokens: 2000 }
+// A use case = token profile (drives time & cost) + the quality metric that matters for it.
+// Token profiles are estimates. 5000 words ≈ 6.7k tokens (≈1.33 tokens/word in English).
+const USECASES = {
+  brief:   { label: "Daily brief: 20 sites → 200 words", metric: "longdoc",
+             inputTokens: 7000, outputTokens: 270, reasoningTokens: 1500 },
+  doc:     { label: "Analyse a 50-page document", metric: "longdoc",
+             inputTokens: 33000, outputTokens: 800, reasoningTokens: 2000 },
+  coding:  { label: "Coding task (fix a bug in a repo)", metric: "coding",
+             inputTokens: 15000, outputTokens: 1000, reasoningTokens: 2000 },
+  agent:   { label: "Agentic workflow with tools", metric: "agentic",
+             inputTokens: 20000, outputTokens: 500, reasoningTokens: 3000 },
+  qa:      { label: "Quick question from model knowledge", metric: "reliability",
+             inputTokens: 500, outputTokens: 300, reasoningTokens: 500 },
+  general: { label: "General use (overall index)", metric: "overall",
+             inputTokens: 3000, outputTokens: 500, reasoningTokens: 1000 }
 };
 // Units of 1 USD. Fallback only — replaced by live ECB (Frankfurter) or NBP rates when reachable.
 const FALLBACK_FX = { USD: 1, EUR: 0.87, PLN: 3.70 };
@@ -20,9 +30,9 @@ const METRICS = {
   agentic:     { label: "Agentic workflows", short: "Agentic", axis: "AutomationBench-AA (%)", get: m => m.bench?.automationbench,
                  note: "AutomationBench-AA: share of objectives completed in simulated SaaS workflows using tools." },
   longdoc:     { label: "Long documents", short: "Long docs", axis: "GDP.pdf all-pass rate (%)", get: m => m.bench?.gdppdf,
-                 note: "GDP.pdf: reasoning over long real-world professional documents; a task counts only if every criterion passes." },
-  reliability: { label: "Factual reliability", short: "Reliability", axis: "AA-Omniscience net score", get: m => m.bench?.omniscience,
-                 note: "AA-Omniscience net score: correct answers minus hallucinated ones (−100…100). Abstaining beats guessing." }
+                 note: "GDP.pdf: reasoning over long real-world professional documents; a task counts only if every criterion passes. Closest available proxy for summarising sources — no AA benchmark measures faithfulness to provided text directly." },
+  reliability: { label: "Knowledge reliability (no sources)", short: "Knowledge", axis: "AA-Omniscience net score", get: m => m.bench?.omniscience,
+                 note: "AA-Omniscience net score: closed-book factual questions, correct minus hallucinated answers (−100…100); abstaining beats guessing. Measures what the model knows by itself, not faithfulness to documents you provide." }
 };
 const KIND = {
   frontier: { label: "Frontier via API", color: "var(--s-frontier)" },
@@ -45,8 +55,10 @@ const metric = () => METRICS[$("metric").value];
 $("asof").textContent = modelsJ._meta.quality_checked;
 for (const h of hardware) $("hw").add(new Option(h.name, h.id));
 for (const [k, m] of Object.entries(METRICS)) $("metric").add(new Option(m.label, k));
+for (const [k, u] of Object.entries(USECASES)) $("usecase").add(new Option(u.label, k));
+$("usecase").add(new Option("Custom (set under More settings)", "custom"));
 $("hw").value = "ryzen-ai-max-128";
-applyScenario("brief");
+applyUseCase("brief");
 $("runs").value = 30;
 syncPower(); syncKwh();
 
@@ -68,21 +80,25 @@ async function loadFx() {
   }
 }
 
-function applyScenario(k) {
-  const s = SCENARIOS[k];
-  $("inTok").value = s.inputTokens; $("outTok").value = s.outputTokens; $("reasonTok").value = s.reasoningTokens;
+function applyUseCase(k) {
+  const u = USECASES[k]; if (!u) return;
+  $("inTok").value = u.inputTokens; $("outTok").value = u.outputTokens; $("reasonTok").value = u.reasoningTokens;
+  $("metric").value = u.metric;
 }
+// editing tokens or metric by hand turns the use case into "Custom"
+const toCustom = () => { $("usecase").value = "custom"; render(); };
 function syncPower() { $("power").value = hardware.find(h => h.id === $("hw").value).power_w; }
 function syncKwh() {
   const v = kwhUSD * fx[cur()];
   $("kwh").value = v.toFixed(v < 1 ? 3 : 2);
   $("kwhLabel").textContent = `Electricity [${cur()}/kWh]`;
 }
-$("scenario").onchange = e => { applyScenario(e.target.value); render(); };
+$("usecase").onchange = e => { applyUseCase(e.target.value); render(); };
+for (const id of ["inTok", "outTok", "reasonTok", "metric"]) $(id).oninput = toCustom;
 $("hw").onchange = () => { syncPower(); render(); };
 $("cur").onchange = () => { syncKwh(); render(); };
 $("kwh").oninput = () => { kwhUSD = +$("kwh").value / fx[cur()]; render(); };
-for (const id of ["mode", "power", "inTok", "outTok", "reasonTok", "runs", "onlyRunnable", "metric"]) $(id).oninput = render;
+for (const id of ["mode", "power", "runs", "onlyRunnable"]) $(id).oninput = render;
 
 // tabs (hash-routed so links and the back button work)
 function showTab() {
@@ -193,6 +209,7 @@ function table(st, R) {
 function chart(st, R) {
   const M = metric();
   $("metricNote").textContent = M.note;
+  $("metricName").textContent = `Quality: ${M.label}`;
   const pts = [];
   for (const { m, api, loc } of R) {
     const y = M.get(m);
