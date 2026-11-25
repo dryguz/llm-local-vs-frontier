@@ -24,7 +24,7 @@ export const DEFAULTS = {
 
 export function estimateLocal(model, hw, opts = {}) {
   const o = { ...DEFAULTS, ...opts };
-  if (model.total_b == null || model.active_b == null) return { ok: false, reason: "brak danych o parametrach" };
+  if (model.total_b == null || model.active_b == null) return { ok: false, reason: "no parameter data" };
 
   const GB = 1e9;
   const bpp = o.bytesPerParam;
@@ -40,9 +40,9 @@ export function estimateLocal(model, hw, opts = {}) {
   const memCap = tiers.reduce((s, t) => s + t.capB, 0);
 
   if (o.mode === "fit" && totalBytes > memCap)
-    return { ok: false, reason: `nie mieści się (${fmtGB(totalBytes)} > ${fmtGB(memCap)})`, totalBytes };
+    return { ok: false, reason: `does not fit (${fmtGB(totalBytes)} > ${fmtGB(memCap)})`, totalBytes };
   if (denseActive > memCap)
-    return { ok: false, reason: "część gęsta nie mieści się w pamięci", totalBytes };
+    return { ok: false, reason: "dense part does not fit in memory", totalBytes };
 
   // place dense part, then expert pool, fastest tier first
   let remainingDense = denseActive, remainingPool = pool;
@@ -107,7 +107,7 @@ export function taskLocal(model, hw, scen, opts = {}) {
 }
 
 export function taskApi(model, scen) {
-  if (model.price_in == null || model.price_out == null) return { ok: false, reason: "brak ceny API" };
+  if (model.price_in == null || model.price_out == null) return { ok: false, reason: "no API price" };
   const m = model.token_multiplier ?? 1;
   const inTok = scen.inputTokens * m;
   const outTok = (scen.outputTokens + scen.reasoningTokens) * m;

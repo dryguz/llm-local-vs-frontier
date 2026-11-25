@@ -1,16 +1,16 @@
 import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js";
 
 const SCENARIOS = {
-  // 5000 words of source text ≈ 6.7k tokens (≈1.33 tokens/word in English; Polish is usually higher)
+  // 5000 words of source text ≈ 6.7k tokens (≈1.33 tokens/word in English; other languages usually more)
   brief: { inputTokens: 7000, outputTokens: 270, reasoningTokens: 1500 },
   chat:  { inputTokens: 500,  outputTokens: 300, reasoningTokens: 500 },
   doc:   { inputTokens: 33000, outputTokens: 800, reasoningTokens: 2000 }
 };
 const FALLBACK_USDPLN = 3.70;
 const KIND = {
-  frontier: { label: "Frontier przez API", color: "var(--s-frontier)", shape: "circle" },
-  openapi:  { label: "Open-weight przez API (hosting)", color: "var(--s-openapi)", shape: "square" },
-  local:    { label: "Open-weight lokalnie (prąd)", color: "var(--s-local)", shape: "triangle" }
+  frontier: { label: "Frontier via API", color: "var(--s-frontier)", shape: "circle" },
+  openapi:  { label: "Open-weight via API (hosted)", color: "var(--s-openapi)", shape: "square" },
+  local:    { label: "Open-weight local (electricity)", color: "var(--s-local)", shape: "triangle" }
 };
 
 const $ = id => document.getElementById(id);
@@ -24,15 +24,15 @@ for (const h of hardware) $("hw").add(new Option(h.name, h.id));
 $("hw").value = "ryzen-ai-max-128";
 $("kwh").value = 1.04;
 $("usd").value = FALLBACK_USDPLN;
-$("usdHint").textContent = `Domyślnie ${FALLBACK_USDPLN} (wartość zastępcza); próba pobrania kursu NBP…`;
+$("usdHint").textContent = `Default ${FALLBACK_USDPLN} (fallback); fetching NBP rate…`;
 applyScenario("brief");
 $("runs").value = 30;
 syncPower();
 
 fetch("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json")
   .then(r => r.json())
-  .then(j => { const r = j.rates[0]; $("usd").value = r.mid.toFixed(4); $("usdHint").textContent = `Kurs średni NBP z ${r.effectiveDate}.`; render(); })
-  .catch(() => { $("usdHint").textContent = `Nie udało się pobrać kursu NBP; użyto ${FALLBACK_USDPLN}.`; });
+  .then(j => { const r = j.rates[0]; $("usd").value = r.mid.toFixed(4); $("usdHint").textContent = `NBP mid rate as of ${r.effectiveDate}.`; render(); })
+  .catch(() => { $("usdHint").textContent = `Could not fetch the NBP rate; using ${FALLBACK_USDPLN}.`; });
 
 function applyScenario(k) {
   const s = SCENARIOS[k];
@@ -53,7 +53,7 @@ function state() {
 }
 
 // ---------- formatting ----------
-const pln = v => v == null ? "—" : v < 0.01 ? `${(v * 100).toFixed(2)} gr` : v < 10 ? `${v.toFixed(2)} zł` : `${v.toFixed(0)} zł`;
+const pln = v => v == null ? "—" : v < 0.01 ? `PLN ${v.toFixed(4)}` : v < 10 ? `PLN ${v.toFixed(2)}` : `PLN ${v.toFixed(0)}`;
 const dur = s => s == null ? "—" : s < 60 ? `${s.toFixed(0)} s` : s < 3600 ? `${(s / 60).toFixed(1)} min` : `${(s / 3600).toFixed(1)} h`;
 const tps = v => v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2);
 
@@ -77,14 +77,14 @@ function tiles(st, R) {
   const bestLocal = runnable[0];
   const sonnet = R.find(r => r.m.id === "claude-sonnet-5.5");
   const t = [
-    ["Luka jakości (AA v5.0.2)", `${bestF} vs ${bestO}`, "najlepszy frontier vs najlepszy open-weight"],
-    ["Opóźnienie open-weight", "≈ 4 mies.", "Epoch AI, średnia od 01.2026"],
-    ["30 min lokalnie, prąd", pln(halfHour), `${st.hw.power_w} W × 0,5 h × ${st.scen.pricePerKWh} zł/kWh`],
+    ["Quality gap (AA v5.0.2)", `${bestF} vs ${bestO}`, "best frontier vs best open-weight"],
+    ["Open-weight lag", "≈ 4 months", "Epoch AI, average since Jan 2026"],
+    ["30 min local, electricity", pln(halfHour), `${st.hw.power_w} W × 0.5 h × ${st.scen.pricePerKWh} PLN/kWh`],
     bestLocal
-      ? [`Lokalnie: ${bestLocal.m.name}`, `${dur(bestLocal.loc.totalS)} · ${pln(bestLocal.loc.costPLN)}`,
-         `najlepszy model, który działa na tym sprzęcie · ${pln(bestLocal.loc.costPLN * st.runs)}/mies.`]
-      : ["Lokalnie", "—", "żaden model z indeksem nie działa na tym sprzęcie"],
-    ["API: Claude Sonnet 5.5", pln(sonnet.api.costPLN), `za uruchomienie · ${pln(sonnet.api.costPLN * st.runs)}/mies.`]
+      ? [`Local: ${bestLocal.m.name}`, `${dur(bestLocal.loc.totalS)} · ${pln(bestLocal.loc.costPLN)}`,
+         `best model that runs on this hardware · ${pln(bestLocal.loc.costPLN * st.runs)}/month`]
+      : ["Local", "—", "no scored model runs on this hardware"],
+    ["API: Claude Sonnet 5.5", pln(sonnet.api.costPLN), `per run · ${pln(sonnet.api.costPLN * st.runs)}/month`]
   ];
   $("tiles").innerHTML = t.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 }
@@ -93,9 +93,9 @@ function tiles(st, R) {
 let sortKey = "q", sortDir = -1;
 function table(st, R) {
   const cols = [
-    ["Model", "name"], ["AA", "q"], ["Typ", "type"], ["Param. (akt.)", "params"],
-    ["Rozmiar Q4", "size"], ["tok/s lokalnie", "tps"], ["Czas lokalnie", "time"], ["Prąd/uruch.", "cl"],
-    ["API/uruch.", "ca"], ["API/mies.", "cam"], ["Prąd/mies.", "clm"]
+    ["Model", "name"], ["AA", "q"], ["Weights", "type"], ["Params (active)", "params"],
+    ["Q4 size", "size"], ["Local tok/s", "tps"], ["Local time", "time"], ["Power/run", "cl"],
+    ["API/run", "ca"], ["API/month", "cam"], ["Power/month", "clm"]
   ];
   const data = R.map(({ m, api, loc }) => ({
     m, api, loc,
@@ -109,13 +109,13 @@ function table(st, R) {
   const head = `<tr>${cols.map(([l, k]) => `<th data-k="${k}">${l}${k === sortKey ? (sortDir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>`;
   const body = data.map(d => {
     const k = d.m.open ? "openapi" : "frontier";
-    const locCells = !d.m.open ? `<td class="na" colspan="4">zamknięte wagi</td>`
+    const locCells = !d.m.open ? `<td class="na" colspan="4">closed weights</td>`
       : d.loc.ok ? `<td>${tps(d.loc.decodeTps)}${d.loc.streaming ? " ⇅" : ""}</td><td>${dur(d.loc.totalS)}</td><td>${pln(d.loc.costPLN)}</td>`
       : `<td class="bad" colspan="3">${d.loc.reason}</td>`;
     const sizeCell = d.m.open ? `<td>${d.loc?.totalBytes ? (d.loc.totalBytes / 1e9).toFixed(0) + " GB" : "—"}</td>` : "";
     return `<tr>
       <td><span class="dot" style="background:${KIND[k].color}"></span>${d.m.name}</td>
-      <td>${d.m.aa_index ?? "—"}</td><td>${d.m.open ? "open" : "zamknięty"}</td>
+      <td>${d.m.aa_index ?? "—"}</td><td>${d.m.open ? "open" : "closed"}</td>
       <td>${d.m.total_b ? `${d.m.total_b}B (${d.m.active_b}B)` : "—"}</td>
       ${sizeCell}${locCells}
       <td>${d.api.ok ? pln(d.api.costPLN) : "—"}</td>
@@ -123,7 +123,7 @@ function table(st, R) {
       <td>${d.loc?.ok ? pln(d.loc.costPLN * st.runs) : "—"}</td></tr>`;
   }).join("");
   $("tbl").innerHTML = head + body +
-    `<caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">⇅ = część ekspertów czytana z SSD (tryb colibri). Czas lokalny = przetwarzanie promptu + generowanie (odpowiedź + rozumowanie). Kliknij nagłówek, aby posortować.</caption>`;
+    `<caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">⇅ = some experts streamed from SSD (colibri mode). Local time = prompt processing + generation (answer + reasoning). Click a header to sort.</caption>`;
   $("tbl").querySelectorAll("th").forEach(th => th.onclick = () => {
     const k = th.dataset.k; sortDir = k === sortKey ? -sortDir : (k === "name" ? 1 : -1); sortKey = k; render();
   });
@@ -148,7 +148,7 @@ function chart(st, R) {
     const v = 10 ** e;
     g += `<line class="gridline" x1="${X(v)}" x2="${X(v)}" y1="${mt}" y2="${H - mb}"/><text x="${X(v)}" y="${H - mb + 16}" text-anchor="middle">${pln(v)}</text>`;
   }
-  g += `<text x="${(ml + W - mr) / 2}" y="${H - 6}" text-anchor="middle">koszt jednego uruchomienia (log)</text>`;
+  g += `<text x="${(ml + W - mr) / 2}" y="${H - 6}" text-anchor="middle">cost of one run (log)</text>`;
   g += `<text x="12" y="${(mt + H - mb) / 2}" transform="rotate(-90 12 ${(mt + H - mb) / 2})" text-anchor="middle">AA Intelligence Index v5.0.2</text>`;
 
   // labels on the right edge with collision nudging, leader lines to points
@@ -171,16 +171,16 @@ function chart(st, R) {
     labels += `<line x1="${X(p.x) + 8}" y1="${Y(p.y)}" x2="${W - mr + 6}" y2="${ly}" stroke="var(--grid)"/>` +
       `<text class="lbl" x="${W - mr + 10}" y="${ly + 4}">${short}${p.kind === "local" ? " ▲" : p.kind === "openapi" ? " ■" : ""}</text>`;
   }
-  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Wykres jakości względem kosztu">${g}<line class="axis" x1="${ml}" x2="${W - mr}" y1="${H - mb}" y2="${H - mb}"/>${labels}${marks}</svg>`;
+  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Chart of quality versus cost">${g}<line class="axis" x1="${ml}" x2="${W - mr}" y1="${H - mb}" y2="${H - mb}"/>${labels}${marks}</svg>`;
 
   const tip = $("tip");
   $("chart").querySelectorAll("g[data-i]").forEach(el => {
     el.onmousemove = ev => {
       const p = pts[+el.dataset.i];
       const extra = p.kind === "local"
-        ? `${tps(p.loc.decodeTps)} tok/s · czas ${dur(p.loc.totalS)} (prompt ${dur(p.loc.prefillS)})<br>${p.loc.kWh.toFixed(3)} kWh${p.loc.streaming ? " · strumieniowanie z SSD" : ""}`
-        : `${Math.round(p.api.inTok)} tok. wejścia, ${Math.round(p.api.outTok)} tok. wyjścia · $${p.api.usd.toFixed(4)}`;
-      tip.innerHTML = `<b>${p.m.name}</b><br>${KIND[p.kind].label}<br>AA ${p.y} · ${pln(p.x)} / uruch. · ${pln(p.x * st.runs)} / mies.<br>${extra}`;
+        ? `${tps(p.loc.decodeTps)} tok/s · time ${dur(p.loc.totalS)} (prompt ${dur(p.loc.prefillS)})<br>${p.loc.kWh.toFixed(3)} kWh${p.loc.streaming ? " · streaming from SSD" : ""}`
+        : `${Math.round(p.api.inTok)} input tok, ${Math.round(p.api.outTok)} output tok · $${p.api.usd.toFixed(4)}`;
+      tip.innerHTML = `<b>${p.m.name}</b><br>${KIND[p.kind].label}<br>AA ${p.y} · ${pln(p.x)} / run · ${pln(p.x * st.runs)} / month<br>${extra}`;
       tip.hidden = false; tip.style.left = ev.clientX + 14 + "px"; tip.style.top = ev.clientY + 14 + "px";
     };
     el.onmouseleave = () => { tip.hidden = true; };
@@ -200,11 +200,11 @@ function calibration() {
     const e = estimateLocal({ total_b: p.total_b, active_b: p.active_b }, hwById[p.hw_id], { ramOverrideGb: p.ram_override_gb, cold: p.cold });
     const ratio = e.decodeTps / ((p.measured_lo + p.measured_hi) / 2);
     const cls = ratio > 2 || ratio < 0.5 ? "bad" : "";
-    const note = p.hw_id === "ryzen-ai-max-128" ? "punkt kalibracyjny (dopasowany)" : (p.hw_note ?? "");
+    const note = p.hw_id === "ryzen-ai-max-128" ? "calibration point (fitted)" : (p.hw_note ?? "");
     return `<tr><td class="l">${p.label}</td><td>${meas}</td><td>${tps(e.decodeTps)}</td><td class="${cls}">${ratio.toFixed(2)}×</td><td class="l">${note}</td></tr>`;
   }).join("");
-  $("cal").innerHTML = `<tr><th>Konfiguracja</th><th>Pomiar tok/s</th><th>Model tok/s</th><th>Model / pomiar</th><th>Uwagi</th></tr>${rowsH}
-    <caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">Znana słabość: dla małych MoE na CPU model zawyża prędkość około 4–5×. W tym reżimie liczą się obliczenia i narzut silnika, a nie tylko przepustowość pamięci. Parametry: Q4 ≈ ${DEFAULTS.bytesPerParam} B/param, efektywność pamięci ${DEFAULTS.memEff}, SSD ${DEFAULTS.ssdEff}, skew ${DEFAULTS.skew}.</caption>`;
+  $("cal").innerHTML = `<tr><th>Configuration</th><th>Measured tok/s</th><th>Model tok/s</th><th>Model / measured</th><th>Notes</th></tr>${rowsH}
+    <caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">Known weakness: for small MoE models on CPU the model overestimates speed by about 4–5×. In that regime compute and engine overhead matter, not only memory bandwidth. Parameters: Q4 ≈ ${DEFAULTS.bytesPerParam} B/param, memory efficiency ${DEFAULTS.memEff}, SSD ${DEFAULTS.ssdEff}, skew ${DEFAULTS.skew}.</caption>`;
 }
 
 function sources() {
@@ -212,15 +212,15 @@ function sources() {
     ["Artificial Analysis — leaderboard (Intelligence Index v5.0.2)", "https://artificialanalysis.ai/leaderboards/models"],
     ["Artificial Analysis — open weights models", "https://artificialanalysis.ai/models/open-source"],
     ["Epoch AI — open-weight models lag", "https://epoch.ai/topics/open-models"],
-    ["How far behind is open-source AI? (wykres luki w miesiącach)", "https://yaroslavvb.github.io/artificial-analysis-oss-lag/"],
-    ["colibri — README i pomiary", "https://github.com/JustVugg/colibri"],
-    ["llmhardware.io — wzór na pułap tok/s, przepustowości", "https://llmhardware.io/guides/llm-tokens-per-second"],
-    ["Anthropic — cennik API", "https://platform.claude.com/en/docs/about-claude/pricing"],
-    ["OpenAI — cennik API", "https://developers.openai.com/api/docs/pricing"],
-    ["OpenRouter — ceny modeli open-weight", "https://openrouter.ai/"],
-    ["Ceny prądu 2026 (G11, średnio ~1,04 zł/kWh brutto)", "https://rankomat.pl/nieruchomosci/ceny-pradu"],
-    ["LocalScore — mierzone wyniki na sprzęcie", "https://localscore.ai"],
-    ["NBP API — kurs USD", "https://api.nbp.pl/"]
+    ["How far behind is open-source AI? (gap in months)", "https://yaroslavvb.github.io/artificial-analysis-oss-lag/"],
+    ["colibri — README and measurements", "https://github.com/JustVugg/colibri"],
+    ["llmhardware.io — tok/s ceiling formula, bandwidths", "https://llmhardware.io/guides/llm-tokens-per-second"],
+    ["Anthropic — API pricing", "https://platform.claude.com/en/docs/about-claude/pricing"],
+    ["OpenAI — API pricing", "https://developers.openai.com/api/docs/pricing"],
+    ["OpenRouter — open-weight model prices", "https://openrouter.ai/"],
+    ["Polish electricity prices 2026 (G11 tariff, avg ~1.04 PLN/kWh gross)", "https://rankomat.pl/nieruchomosci/ceny-pradu"],
+    ["LocalScore — measured results on hardware", "https://localscore.ai"],
+    ["NBP API — USD exchange rate", "https://api.nbp.pl/"]
   ];
   $("sources").innerHTML = s.map(([t, u]) => `<li><a href="${u}">${t}</a></li>`).join("");
 }
