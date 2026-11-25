@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "source": "https://github.com/JustVugg/colibri (README, read 2026-11-25)",
+    "note": "Decode tok/s measured by the colibri author on specific machines. Where the README does not name the machine precisely, hw_id is our closest guess (see hw_note) or null (no prediction made)."
+  },
+  "points": [
+    {"label": "GLM-5.2 744B, 128 GB Ryzen AI Max+ 395 (CPU)", "total_b": 744, "active_b": 40, "hw_id": "ryzen-ai-max-128",
+     "measured_lo": 1.83, "measured_hi": 1.83, "engine": "colibri"},
+    {"label": "GLM-5.2 744B, 25 GB laptop, cold cache", "total_b": 744, "active_b": 40, "hw_id": "laptop-32", "ram_override_gb": 19, "cold": true,
+     "hw_note": "laptop with 25 GB RAM; bandwidth and SSD assumed", "measured_lo": 0.05, "measured_hi": 0.1, "engine": "colibri"},
+    {"label": "Qwen3.6-35B-A3B, CPU (machine with Radeon 780M)", "total_b": 35, "active_b": 3, "hw_id": "laptop-32",
+     "hw_note": "assumed DDR5-5600 dual channel laptop", "measured_lo": 6.0, "measured_hi": 6.0, "engine": "colibri"},
+    {"label": "Qwen3.6-35B-A3B, RTX PRO 4000 (CUDA)", "total_b": 35, "active_b": 3, "hw_id": "pc-rtxpro4000",
+     "measured_lo": 105, "measured_hi": 105, "engine": "colibri"},
+    {"label": "DeepSeek V4 Flash 284B, CPU only", "total_b": 284, "active_b": null, "hw_id": null,
+     "hw_note": "machine not specified", "measured_lo": 0.93, "measured_hi": 1.24, "engine": "colibri"},
+    {"label": "GLM-5.2 744B, 6x RTX 5090, all experts resident", "total_b": 744, "active_b": 40, "hw_id": null,
+     "hw_note": "multi-GPU not modelled", "measured_lo": 9.0, "measured_hi": 9.2, "engine": "colibri"},
+    {"label": "Kimi K3 2.8T", "total_b": 2800, "active_b": 104, "hw_id": null,
+     "hw_note": "machine not specified", "measured_lo": 0.106, "measured_hi": 0.106, "engine": "colibri"}
+  ]
+}

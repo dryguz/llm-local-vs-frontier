@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "note": "Tiers are ordered fastest first. cap_gb = memory usable for weights (after OS/runtime reserve). bw_gbs = vendor peak bandwidth. power_w = whole-system draw under inference load: ESTIMATE from TDP/PSU class, replace with a wall-meter reading. tflops = effective dense compute for prompt processing (prefill): ESTIMATE, calibrate with llama-bench pp512.",
+    "bandwidth_sources": {
+      "gpu_mac_spark": "https://llmhardware.io/guides/llm-tokens-per-second",
+      "ryzen_ai_max": "AMD spec: 256-bit LPDDR5X-8000 = 256 GB/s",
+      "ddr5_dual_channel": "computed: MT/s x 8 B x 2 channels"
+    }
+  },
+  "hardware": [
+    {"id": "laptop-32", "name": "Laptop, 32 GB DDR5-5600 (CPU)", "class": "cpu",
+     "tiers": [{"name": "RAM", "cap_gb": 26, "bw_gbs": 89.6}], "ssd_gbs": 5, "tflops": 0.4, "power_w": 65},
+    {"id": "desktop-64", "name": "Desktop, 64 GB DDR5-6000 (CPU)", "class": "cpu",
+     "tiers": [{"name": "RAM", "cap_gb": 56, "bw_gbs": 96}], "ssd_gbs": 7, "tflops": 1.0, "power_w": 180},
+    {"id": "ryzen-ai-max-128", "name": "Mini PC Ryzen AI Max+ 395, 128 GB", "class": "unified",
+     "tiers": [{"name": "RAM", "cap_gb": 116, "bw_gbs": 256}], "ssd_gbs": 7, "tflops": 3.0, "power_w": 140},
+    {"id": "dgx-spark", "name": "NVIDIA DGX Spark, 128 GB", "class": "unified",
+     "tiers": [{"name": "Unified", "cap_gb": 116, "bw_gbs": 273}], "ssd_gbs": 7, "tflops": 30, "power_w": 170},
+    {"id": "mac-m4max-128", "name": "Mac Studio M4 Max, 128 GB", "class": "unified",
+     "tiers": [{"name": "Unified", "cap_gb": 96, "bw_gbs": 546}], "ssd_gbs": 6, "tflops": 8, "power_w": 140},
+    {"id": "mac-m5ultra-96", "name": "Mac Studio M5 Ultra, 96 GB", "class": "unified",
+     "tiers": [{"name": "Unified", "cap_gb": 72, "bw_gbs": 1200}], "ssd_gbs": 7, "tflops": 20, "power_w": 220},
+    {"id": "pc-4090", "name": "PC RTX 4090 24 GB + 64 GB DDR5", "class": "gpu",
+     "tiers": [{"name": "VRAM", "cap_gb": 22, "bw_gbs": 1008}, {"name": "RAM", "cap_gb": 56, "bw_gbs": 96}],
+     "ssd_gbs": 7, "tflops": 80, "power_w": 550},
+    {"id": "pc-5090", "name": "PC RTX 5090 32 GB + 128 GB DDR5", "class": "gpu",
+     "tiers": [{"name": "VRAM", "cap_gb": 30, "bw_gbs": 1792}, {"name": "RAM", "cap_gb": 120, "bw_gbs": 96}],
+     "ssd_gbs": 12, "tflops": 120, "power_w": 750},
+    {"id": "pc-rtxpro4000", "name": "PC RTX PRO 4000 24 GB + 64 GB DDR5", "class": "gpu",
+     "tiers": [{"name": "VRAM", "cap_gb": 22, "bw_gbs": 672}, {"name": "RAM", "cap_gb": 56, "bw_gbs": 96}],
+     "ssd_gbs": 7, "tflops": 40, "power_w": 300}
+  ]
+}
