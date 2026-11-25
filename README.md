@@ -2,10 +2,10 @@
 
 Statyczny dashboard (GitHub Pages) porównujący modele open-weight z modelami frontier w czterech wymiarach:
 
-1. **Jakość**: Artificial Analysis Intelligence Index v5.0.2.
+1. **Jakość**: Artificial Analysis Intelligence Index v5.0.2 oraz cztery widoki zadaniowe: Coding (FrontierCode 2.0 + Terminal-Bench 4.1), Agentic (AutomationBench), Long documents (GDP.pdf), Factual reliability (Omniscience net score).
 2. **Sprzęt**: czy model się mieści (RAM/VRAM) albo czy da się go uruchomić ze strumieniowaniem ekspertów z SSD (colibri).
 3. **Czas**: szacowana prędkość generowania i przetwarzania promptu → czas konkretnego zadania.
-4. **Koszt**: prąd lokalnie vs tokeny w API (Anthropic, OpenAI, hosting modeli open-weight).
+4. **Koszt**: prąd lokalnie vs tokeny w API (Anthropic, OpenAI, hosting modeli open-weight), w USD, EUR lub PLN (kursy ECB z Frankfurter, NBP jako zapas).
 
 ## Uruchomienie
 

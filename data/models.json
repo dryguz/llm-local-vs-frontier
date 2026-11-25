@@ -1,61 +1,311 @@
 {
-  "_meta": {
-    "quality_metric": "Artificial Analysis Intelligence Index v5.0.2",
-    "quality_source": "https://artificialanalysis.ai/leaderboards/models",
-    "quality_checked": "2026-11-25",
-    "price_unit": "USD per 1M tokens, standard tier, short context",
-    "note": "Index v5.0.2 is not comparable with v4.x numbers (e.g. April 2026 articles quoting 54-60). Params in billions. token_multiplier: Anthropic says Claude 4.7+ tokenizer yields ~30% more tokens for the same text."
+ "_meta": {
+  "quality_metric": "Artificial Analysis Intelligence Index v5.0.2",
+  "quality_source": "https://artificialanalysis.ai/leaderboards/models",
+  "quality_checked": "2026-11-25",
+  "price_unit": "USD per 1M tokens, standard tier, short context",
+  "note": "Index v5.0.2 is not comparable with v4.x numbers (e.g. April 2026 articles quoting 54-60). Params in billions. token_multiplier: Anthropic says Claude 4.7+ tokenizer yields ~30% more tokens for the same text.",
+  "bench_source": {
+   "frontiercode": "https://artificialanalysis.ai/evaluations/frontiercode-2-0 (FrontierCode-AA 2.0, %)",
+   "terminalbench": "https://artificialanalysis.ai/evaluations/terminalbench-4-1 (Terminal-Bench 4.1, %)",
+   "automationbench": "https://artificialanalysis.ai/evaluations/automationbench-aa (AutomationBench-AA, %)",
+   "gdppdf": "https://artificialanalysis.ai/evaluations/gdp-pdf (GDP.pdf all-pass rate, %)",
+   "omniscience": "https://artificialanalysis.ai/evaluations/omniscience (AA-Omniscience v1.1 net score, -100..100)",
+   "read": "2026-11-25, values read from the rendered charts"
+  }
+ },
+ "models": [
+  {
+   "id": "claude-fable-5.2",
+   "name": "Claude Fable 5.2 (Max)",
+   "vendor": "Anthropic",
+   "open": false,
+   "aa_index": 65,
+   "price_in": 8,
+   "price_out": 40,
+   "token_multiplier": 1.3,
+   "price_source": "https://platform.claude.com/en/docs/about-claude/pricing",
+   "bench": {
+    "frontiercode": 48.8,
+    "terminalbench": 61.6,
+    "automationbench": 76.4,
+    "gdppdf": 24.2,
+    "omniscience": 67
+   }
   },
-  "models": [
-    {"id": "claude-fable-5.2", "name": "Claude Fable 5.2 (Max)", "vendor": "Anthropic", "open": false, "aa_index": 65,
-     "price_in": 8, "price_out": 40, "token_multiplier": 1.3,
-     "price_source": "https://platform.claude.com/en/docs/about-claude/pricing"},
-    {"id": "gpt-6.2-astra", "name": "GPT-6.2 Astra (Max)", "vendor": "OpenAI", "open": false, "aa_index": 62,
-     "price_in": 8, "price_out": 40, "token_multiplier": 1.0,
-     "price_source": "https://developers.openai.com/api/docs/pricing (via launch coverage 2026-11-17)"},
-    {"id": "claude-opus-5.5", "name": "Claude Opus 5.5 (Max)", "vendor": "Anthropic", "open": false, "aa_index": 59,
-     "price_in": 4, "price_out": 20, "token_multiplier": 1.3,
-     "price_source": "https://platform.claude.com/en/docs/about-claude/pricing"},
-    {"id": "gpt-6.2-sol", "name": "GPT-6.2 Sol (Max)", "vendor": "OpenAI", "open": false, "aa_index": 57,
-     "price_in": 2, "price_out": 10, "token_multiplier": 1.0,
-     "price_source": "https://developers.openai.com/api/docs/pricing (via launch coverage 2026-11-17)"},
-    {"id": "claude-sonnet-5.5", "name": "Claude Sonnet 5.5 (Max)", "vendor": "Anthropic", "open": false, "aa_index": 55,
-     "price_in": 2, "price_out": 10, "token_multiplier": 1.3,
-     "price_source": "https://platform.claude.com/en/docs/about-claude/pricing"},
-    {"id": "claude-haiku-5.5", "name": "Claude Haiku 5.5 (Max)", "vendor": "Anthropic", "open": false, "aa_index": 37,
-     "price_in": 0.10, "price_out": 0.50, "token_multiplier": 1.3,
-     "price_source": "https://platform.claude.com/en/docs/about-claude/pricing (prompts <=100K tokens)"},
-
-    {"id": "kimi-k3.1-pro", "name": "Kimi K3.1 Pro", "vendor": "Moonshot AI", "open": true, "aa_index": 47,
-     "total_b": 2800, "active_b": 104, "colibri": "partial (K3 supported, K3.1 not listed)",
-     "price_in": 2.0, "price_out": 10.0, "token_multiplier": 1.0,
-     "price_source": "Moonshot API / OpenRouter (computeprices.com, 2026-10-24)"},
-    {"id": "tencent-hy4", "name": "Tencent Hy4", "vendor": "Tencent", "open": true, "aa_index": 35,
-     "total_b": 774, "active_b": 50.2, "colibri": "no",
-     "price_in": 0.834, "price_out": 2.501, "token_multiplier": 1.0,
-     "price_source": "https://www.tencentcloud.com/document/product/1300/78937 (Hy4 preview)"},
-    {"id": "deepseek-v4.1-flash", "name": "DeepSeek V4.1 Flash (Max)", "vendor": "DeepSeek", "open": true, "aa_index": 32,
-     "total_b": 552, "active_b": 16, "colibri": "yes",
-     "price_in": 0.30, "price_out": 1.20, "token_multiplier": 1.0,
-     "price_source": "OpenRouter (peak rate; off-peak ~50% cheaper)"},
-    {"id": "glm-5.3", "name": "GLM-5.3 (Max)", "vendor": "Z AI", "open": true, "aa_index": 32,
-     "total_b": 753, "active_b": 40, "colibri": "yes",
-     "price_in": 1.40, "price_out": 4.40, "token_multiplier": 1.0,
-     "price_source": "OpenRouter (Z.ai)"},
-    {"id": "mimo-v2.6-pro", "name": "MiMo-V2.6-Pro", "vendor": "Xiaomi", "open": true, "aa_index": 30,
-     "total_b": 1000, "active_b": 42, "colibri": "yes",
-     "price_in": null, "price_out": null, "token_multiplier": 1.0, "price_source": "not collected yet"},
-    {"id": "mistral-large-4", "name": "Mistral Large 4 (High)", "vendor": "Mistral", "open": true, "aa_index": 26,
-     "total_b": 1100, "active_b": 52, "colibri": "yes",
-     "price_in": null, "price_out": null, "token_multiplier": 1.0, "price_source": "not collected yet"},
-    {"id": "qwen3.8-27b", "name": "Qwen3.8 27B (Xhigh)", "vendor": "Alibaba", "open": true, "aa_index": 20,
-     "total_b": 27, "active_b": 27, "dense": true, "colibri": "yes",
-     "price_in": null, "price_out": null, "token_multiplier": 1.0, "price_source": "not collected yet"},
-    {"id": "nemotron-3.5-super", "name": "Nemotron 3.5 Super VL", "vendor": "NVIDIA", "open": true, "aa_index": 14,
-     "total_b": 120, "active_b": 12, "colibri": "no",
-     "price_in": null, "price_out": null, "token_multiplier": 1.0, "price_source": "not collected yet"},
-    {"id": "qwen3.6-35b-a3b", "name": "Qwen3.6 35B A3B", "vendor": "Alibaba", "open": true, "aa_index": null,
-     "total_b": 35, "active_b": 3, "colibri": "yes",
-     "price_in": null, "price_out": null, "token_multiplier": 1.0, "price_source": "AA lists it without an index score"}
-  ]
+  {
+   "id": "gpt-6.2-astra",
+   "name": "GPT-6.2 Astra (Max)",
+   "vendor": "OpenAI",
+   "open": false,
+   "aa_index": 62,
+   "price_in": 8,
+   "price_out": 40,
+   "token_multiplier": 1.0,
+   "price_source": "https://developers.openai.com/api/docs/pricing (via launch coverage 2026-11-17)",
+   "bench": {
+    "frontiercode": 45.4,
+    "terminalbench": 64.6,
+    "automationbench": 77.2,
+    "gdppdf": 29.8,
+    "omniscience": 50
+   }
+  },
+  {
+   "id": "claude-opus-5.5",
+   "name": "Claude Opus 5.5 (Max)",
+   "vendor": "Anthropic",
+   "open": false,
+   "aa_index": 59,
+   "price_in": 4,
+   "price_out": 20,
+   "token_multiplier": 1.3,
+   "price_source": "https://platform.claude.com/en/docs/about-claude/pricing",
+   "bench": {
+    "frontiercode": 46.9,
+    "terminalbench": 59.1,
+    "automationbench": 69.5,
+    "gdppdf": 26.2,
+    "omniscience": 48
+   }
+  },
+  {
+   "id": "gpt-6.2-sol",
+   "name": "GPT-6.2 Sol (Max)",
+   "vendor": "OpenAI",
+   "open": false,
+   "aa_index": 57,
+   "price_in": 2,
+   "price_out": 10,
+   "token_multiplier": 1.0,
+   "price_source": "https://developers.openai.com/api/docs/pricing (via launch coverage 2026-11-17)",
+   "bench": {
+    "frontiercode": 44.4,
+    "terminalbench": 60.1,
+    "automationbench": 71.3,
+    "gdppdf": 30.0,
+    "omniscience": 40
+   }
+  },
+  {
+   "id": "claude-sonnet-5.5",
+   "name": "Claude Sonnet 5.5 (Max)",
+   "vendor": "Anthropic",
+   "open": false,
+   "aa_index": 55,
+   "price_in": 2,
+   "price_out": 10,
+   "token_multiplier": 1.3,
+   "price_source": "https://platform.claude.com/en/docs/about-claude/pricing",
+   "bench": {
+    "frontiercode": 41.9,
+    "terminalbench": 65.2,
+    "automationbench": 71.8,
+    "gdppdf": 25.8,
+    "omniscience": 30
+   }
+  },
+  {
+   "id": "claude-haiku-5.5",
+   "name": "Claude Haiku 5.5 (Max)",
+   "vendor": "Anthropic",
+   "open": false,
+   "aa_index": 37,
+   "price_in": 0.1,
+   "price_out": 0.5,
+   "token_multiplier": 1.3,
+   "price_source": "https://platform.claude.com/en/docs/about-claude/pricing (prompts <=100K tokens)",
+   "bench": {
+    "frontiercode": 34.9,
+    "terminalbench": 33.3,
+    "automationbench": null,
+    "gdppdf": 20.8,
+    "omniscience": 12
+   }
+  },
+  {
+   "id": "kimi-k3.1-pro",
+   "name": "Kimi K3.1 Pro",
+   "vendor": "Moonshot AI",
+   "open": true,
+   "aa_index": 47,
+   "total_b": 2800,
+   "active_b": 104,
+   "colibri": "partial (K3 supported, K3.1 not listed)",
+   "price_in": 2.0,
+   "price_out": 10.0,
+   "token_multiplier": 1.0,
+   "price_source": "Moonshot API / OpenRouter (computeprices.com, 2026-10-24)",
+   "bench": {
+    "frontiercode": 25.5,
+    "terminalbench": 68.2,
+    "automationbench": 73.3,
+    "gdppdf": 31.4,
+    "omniscience": 30
+   }
+  },
+  {
+   "id": "tencent-hy4",
+   "name": "Tencent Hy4",
+   "vendor": "Tencent",
+   "open": true,
+   "aa_index": 35,
+   "total_b": 774,
+   "active_b": 50.2,
+   "colibri": "no",
+   "price_in": 0.834,
+   "price_out": 2.501,
+   "token_multiplier": 1.0,
+   "price_source": "https://www.tencentcloud.com/document/product/1300/78937 (Hy4 preview)",
+   "bench": {
+    "frontiercode": 31.2,
+    "terminalbench": 37.9,
+    "automationbench": 65.6,
+    "gdppdf": 21.6,
+    "omniscience": 5
+   }
+  },
+  {
+   "id": "deepseek-v4.1-flash",
+   "name": "DeepSeek V4.1 Flash (Max)",
+   "vendor": "DeepSeek",
+   "open": true,
+   "aa_index": 32,
+   "total_b": 552,
+   "active_b": 16,
+   "colibri": "yes",
+   "price_in": 0.3,
+   "price_out": 1.2,
+   "token_multiplier": 1.0,
+   "price_source": "OpenRouter (peak rate; off-peak ~50% cheaper)",
+   "bench": {
+    "frontiercode": 28.2,
+    "terminalbench": 32.3,
+    "automationbench": 66.6,
+    "gdppdf": 17.2,
+    "omniscience": 1
+   }
+  },
+  {
+   "id": "glm-5.3",
+   "name": "GLM-5.3 (Max)",
+   "vendor": "Z AI",
+   "open": true,
+   "aa_index": 32,
+   "total_b": 753,
+   "active_b": 40,
+   "colibri": "yes",
+   "price_in": 1.4,
+   "price_out": 4.4,
+   "token_multiplier": 1.0,
+   "price_source": "OpenRouter (Z.ai)",
+   "bench": {
+    "frontiercode": 21.6,
+    "terminalbench": 40.9,
+    "automationbench": 62.2,
+    "gdppdf": 11.2,
+    "omniscience": 6
+   }
+  },
+  {
+   "id": "mimo-v2.6-pro",
+   "name": "MiMo-V2.6-Pro",
+   "vendor": "Xiaomi",
+   "open": true,
+   "aa_index": 30,
+   "total_b": 1000,
+   "active_b": 42,
+   "colibri": "yes",
+   "price_in": null,
+   "price_out": null,
+   "token_multiplier": 1.0,
+   "price_source": "not collected yet",
+   "bench": {
+    "frontiercode": 24.0,
+    "terminalbench": 35.4,
+    "automationbench": 58.6,
+    "gdppdf": 19.2,
+    "omniscience": -4
+   }
+  },
+  {
+   "id": "mistral-large-4",
+   "name": "Mistral Large 4 (High)",
+   "vendor": "Mistral",
+   "open": true,
+   "aa_index": 26,
+   "total_b": 1100,
+   "active_b": 52,
+   "colibri": "yes",
+   "price_in": null,
+   "price_out": null,
+   "token_multiplier": 1.0,
+   "price_source": "not collected yet",
+   "bench": {
+    "frontiercode": 15.0,
+    "terminalbench": 24.7,
+    "automationbench": 57.8,
+    "gdppdf": 17.6,
+    "omniscience": 5
+   }
+  },
+  {
+   "id": "qwen3.8-27b",
+   "name": "Qwen3.8 27B (Xhigh)",
+   "vendor": "Alibaba",
+   "open": true,
+   "aa_index": 20,
+   "total_b": 27,
+   "active_b": 27,
+   "dense": true,
+   "colibri": "yes",
+   "price_in": null,
+   "price_out": null,
+   "token_multiplier": 1.0,
+   "price_source": "not collected yet",
+   "bench": {
+    "frontiercode": 14.9,
+    "terminalbench": 5.6,
+    "automationbench": 48.2,
+    "gdppdf": 16.4,
+    "omniscience": -6
+   }
+  },
+  {
+   "id": "nemotron-3.5-super",
+   "name": "Nemotron 3.5 Super VL",
+   "vendor": "NVIDIA",
+   "open": true,
+   "aa_index": 14,
+   "total_b": 120,
+   "active_b": 12,
+   "colibri": "no",
+   "price_in": null,
+   "price_out": null,
+   "token_multiplier": 1.0,
+   "price_source": "not collected yet",
+   "bench": {
+    "frontiercode": 6.1,
+    "terminalbench": 0.0,
+    "automationbench": 14.8,
+    "gdppdf": 8.0,
+    "omniscience": -3
+   }
+  },
+  {
+   "id": "qwen3.6-35b-a3b",
+   "name": "Qwen3.6 35B A3B",
+   "vendor": "Alibaba",
+   "open": true,
+   "aa_index": null,
+   "total_b": 35,
+   "active_b": 3,
+   "colibri": "yes",
+   "price_in": null,
+   "price_out": null,
+   "token_multiplier": 1.0,
+   "price_source": "AA lists it without an index score",
+   "bench": {}
+  }
+ ]
 }

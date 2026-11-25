@@ -102,8 +102,8 @@ export function taskLocal(model, hw, scen, opts = {}) {
   const decodeS = genTokens / e.decodeTps;
   const totalS = prefillS + decodeS;
   const kWh = (hw.power_w * totalS) / 3600 / 1000;
-  const costPLN = kWh * scen.pricePerKWh;
-  return { ...e, prefillS, decodeS, totalS, kWh, costPLN };
+  const cost = kWh * scen.pricePerKWh;   // in the currency of pricePerKWh
+  return { ...e, prefillS, decodeS, totalS, kWh, cost };
 }
 
 export function taskApi(model, scen) {
@@ -112,7 +112,7 @@ export function taskApi(model, scen) {
   const inTok = scen.inputTokens * m;
   const outTok = (scen.outputTokens + scen.reasoningTokens) * m;
   const usd = (inTok * model.price_in + outTok * model.price_out) / 1e6;
-  return { ok: true, usd, costPLN: usd * scen.usdPln, inTok, outTok };
+  return { ok: true, usd, cost: usd * (scen.fx ?? 1), inTok, outTok };
 }
 
 export function fmtGB(b) { return `${(b / 1e9).toFixed(b < 10e9 ? 1 : 0)} GB`; }

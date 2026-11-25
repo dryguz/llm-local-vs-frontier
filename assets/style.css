@@ -98,3 +98,7 @@ a { color: var(--accent); }
   .bar { position: static; }
   html { scroll-padding-top: 0; }
 }
+.metric { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); }
+.metric select { padding: 6px 8px; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; font: inherit; font-size: 14px; }
+.metric-note { margin: 0 0 8px; }
+.legend { margin-top: 8px; }
