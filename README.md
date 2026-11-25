@@ -1,5 +1,7 @@
 # Lokalnie czy w chmurze?
 
+**🔗 Live page: https://dryguz.github.io/llm-local-vs-frontier/**
+
 Statyczny dashboard (GitHub Pages) porównujący modele open-weight z modelami frontier w czterech wymiarach:
 
 1. **Jakość**: Artificial Analysis Intelligence Index v5.0.2 oraz cztery widoki zadaniowe: Coding (FrontierCode 2.0 + Terminal-Bench 4.1), Agentic (AutomationBench), Long documents (GDP.pdf), Factual reliability (Omniscience net score).
