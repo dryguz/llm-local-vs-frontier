@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "metric": "Artificial Analysis Coding Agent Index",
+    "source": "https://artificialanalysis.ai/agents/coding-agents (Harness Comparisons: same model run through each coding agent harness, at maximum reasoning effort)",
+    "read": "2026-11-25, values read from the rendered chart",
+    "note": "Codex value for GLM-5.3-Flash carries an asterisk on the AA chart (footnote not captured)."
+  },
+  "models": [
+    {"name": "GLM-5.3-Flash (Max)", "open": true, "scores": {
+      "Claude Code": 39, "OpenCode": 39, "mini-swe-agent": 38, "Kimi Code CLI": 37, "DeepSeek Harness": 37,
+      "Mistral Vibe": 37, "Devin CLI": 36, "Grok Build": 35, "GitHub Copilot": 35, "Qwen Code": 35,
+      "Muse Code": 32, "Pi": 30, "Codex": 28}},
+    {"name": "GPT-6 Luna (Max)", "open": false, "scores": {
+      "Codex": 26, "mini-swe-agent": 25, "Grok Build": 25, "Muse Code": 23, "OpenCode": 23, "Claude Code": 22,
+      "DeepSeek Harness": 22, "Mistral Vibe": 21, "Pi": 21, "GitHub Copilot": 21, "Kimi Code CLI": 20,
+      "Devin CLI": 18, "Qwen Code": 17}}
+  ]
+}

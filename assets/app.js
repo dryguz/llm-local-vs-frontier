@@ -1,4 +1,4 @@
-import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js?v=0.4";
+import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js?v=0.5";
 
 // A use case = token profile (drives time & cost) + the quality metric that matters for it.
 // Token profiles are estimates. 5000 words ≈ 6.7k tokens (≈1.33 tokens/word in English).
@@ -41,8 +41,8 @@ const KIND = {
 };
 
 const $ = id => document.getElementById(id);
-const [modelsJ, hwJ, calJ] = await Promise.all(
-  ["models", "hardware", "calibration"].map(f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => r.json())));
+const [modelsJ, hwJ, calJ, harnessJ] = await Promise.all(
+  ["models", "hardware", "calibration", "harness"].map(f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => r.json())));
 const models = modelsJ.models, hardware = hwJ.hardware;
 
 // ---------- state ----------
@@ -291,6 +291,25 @@ function calibration() {
   $("cal").innerHTML = `<caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">Known weakness: for small MoE models on CPU the model overestimates speed by about 4–5×. In that regime compute and engine overhead matter, not only memory bandwidth. Parameters: Q4 ≈ ${DEFAULTS.bytesPerParam} B/param, memory efficiency ${DEFAULTS.memEff}, SSD ${DEFAULTS.ssdEff}, skew ${DEFAULTS.skew}.</caption><thead><tr><th class="l">Configuration</th><th>Measured tok/s</th><th>Model tok/s</th><th>Model / measured</th><th class="l">Notes</th></tr></thead><tbody>${rowsH}</tbody>`;
 }
 
+// ---------- harness comparison (one horizontal bar chart per model, single series → no legend) ----------
+function harness() {
+  $("harness").innerHTML = harnessJ.models.map(m => {
+    const rows = Object.entries(m.scores).sort((a, b) => b[1] - a[1]);
+    const max = Math.max(...harnessJ.models.flatMap(x => Object.values(x.scores)));
+    const W = 460, rowH = 22, ml = 130, mr = 36, H = rows.length * rowH + 8;
+    const X = v => ml + v / max * (W - ml - mr);
+    const lo = rows[rows.length - 1][1], hi = rows[0][1];
+    const bars = rows.map(([h, v], i) => {
+      const y = 4 + i * rowH;
+      return `<g><text x="${ml - 8}" y="${y + 14}" text-anchor="end">${h}</text>
+        <rect x="${ml}" y="${y + 3}" width="${X(v) - ml}" height="${rowH - 8}" rx="3" fill="${m.open ? "var(--s-openapi)" : "var(--s-frontier)"}"><title>${h}: ${v}</title></rect>
+        <text class="lbl" x="${X(v) + 6}" y="${y + 14}">${v}</text></g>`;
+    }).join("");
+    return `<figure><figcaption><b>${m.name}</b> · ${m.open ? "open weights" : "closed"} · best ${hi}, worst ${lo} (−${Math.round((1 - lo / hi) * 100)}%)</figcaption>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Coding Agent Index of ${m.name} by harness">${bars}</svg></figure>`;
+  }).join("");
+}
+
 function sources() {
   const s = [
     ["Artificial Analysis — leaderboard (Intelligence Index v5.0.2)", "https://artificialanalysis.ai/leaderboards/models"],
@@ -300,6 +319,8 @@ function sources() {
     ["AA — AutomationBench-AA", "https://artificialanalysis.ai/evaluations/automationbench-aa"],
     ["AA — GDP.pdf", "https://artificialanalysis.ai/evaluations/gdp-pdf"],
     ["AA — AA-Omniscience v1.1", "https://artificialanalysis.ai/evaluations/omniscience"],
+    ["AA — Coding Agent Index, harness comparisons", "https://artificialanalysis.ai/agents/coding-agents"],
+    ["AA — Intelligence benchmarking methodology (sampling, harnesses)", "https://artificialanalysis.ai/methodology/intelligence-benchmarking"],
     ["Epoch AI — open-weight models lag", "https://epoch.ai/topics/open-models"],
     ["How far behind is open-source AI? (gap in months)", "https://yaroslavvb.github.io/artificial-analysis-oss-lag/"],
     ["colibri — README and measurements", "https://github.com/JustVugg/colibri"],
@@ -319,4 +340,4 @@ function render() {
   const st = state(); const R = rows(st);
   tiles(st, R); table(st, R); chart(st, R);
 }
-calibration(); sources(); render();
+calibration(); harness(); sources(); render();

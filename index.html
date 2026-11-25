@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Local or cloud? Open-weight vs frontier LLMs — quality, time, cost</title>
-<link rel="stylesheet" href="assets/style.css?v=0.4">
+<link rel="stylesheet" href="assets/style.css?v=0.5">
 </head>
 <body>
 <header class="top">
@@ -57,7 +57,7 @@
       <p class="hint metric-note" id="metricNote"></p>
       <div id="chart" class="chart"></div>
       <div class="legend" id="legend"></div>
-      <p class="hint">Log-scale cost axis. Shape and color show how the model runs. Local points appear only for models that run on the selected machine. Hover for details.</p>
+      <p class="hint">Log-scale cost axis. Shape and color show how the model runs. Local points appear only for models that run on the selected machine and assume a well-configured setup: quality can be lower in practice (<a href="#method">why</a>). Hover for details.</p>
     </section>
 
     <section class="card">
@@ -66,7 +66,7 @@
         <label class="toggle"><input type="checkbox" id="onlyRunnable"> Hide models that can't run locally here</label>
       </div>
       <div class="tablewrap"><table id="tbl"></table></div>
-      <p class="hint">⇅ = some experts streamed from SSD. Local time = prompt processing + generation (answer + reasoning). Click a header to sort.</p>
+      <p class="hint">Local rows use published quality scores; your own engine, quantization, sampling settings and harness can lower them (see <a href="#method">Method &amp; data</a>). ⇅ = some experts streamed from SSD. Local time = prompt processing + generation (answer + reasoning). Click a header to sort.</p>
     </section>
   </div>
 
@@ -86,6 +86,24 @@
     </section>
 
     <section class="card">
+      <h2>Same model, different harness</h2>
+      <p class="hint">A benchmark score belongs to a whole setup: model + harness (prompts, tool loop, context handling) + sampling settings + serving (provider, quantization). Artificial Analysis ran the same model through 13 coding-agent harnesses at maximum reasoning effort. The spread is comparable to the gap between neighbouring model tiers. Data exists for two models only, both on coding.</p>
+      <div class="harness" id="harness"></div>
+      <p class="hint">Metric: AA Coding Agent Index. Source: <a href="https://artificialanalysis.ai/agents/coding-agents">AA Coding Agents, Harness Comparisons</a>, read 2026-11-25. Codex for GLM-5.3-Flash is marked with an asterisk on AA's chart.</p>
+    </section>
+
+    <section class="card">
+      <h2>What changes when you run a model yourself</h2>
+      <ul class="prose-list">
+        <li><b>Serving setup [unknown for AA scores]:</b> AA does not state which provider, endpoint or quantization it uses for open-weights models.</li>
+        <li><b>Sampling [established that it matters, size unmeasured here]:</b> AA uses temperature 0 for non-reasoning models and 0.6 for reasoning models unless the lab recommends otherwise; top-p and top-k are not stated. Local engines ship their own defaults. In agentic tasks one bad token (e.g. a malformed tool call) carries through all later steps, so the effect grows with task length.</li>
+        <li><b>Quantization and chat template [speculative size]:</b> 4-bit weights and an incorrect chat template in the local engine can lower quality below the published score.</li>
+        <li><b>Harness [measured for coding]:</b> see the chart above; a model can lose roughly a third of its score in a poorly matched harness.</li>
+      </ul>
+      <p class="hint">None of this is modelled in the dashboard: local points use the published scores as-is, so treat them as an upper bound for a well-configured setup.</p>
+    </section>
+
+    <section class="card">
       <h2>Calibration: predictions vs colibri measurements</h2>
       <p class="hint">“Skew” was fitted to a single point (GLM-5.2 on Ryzen AI Max), so that point is not validation. The other points are independent.</p>
       <div class="tablewrap"><table id="cal"></table></div>
@@ -100,6 +118,6 @@
 
 <footer>Code and data on <a href="https://github.com/dryguz/llm-local-vs-frontier">GitHub</a> · edit <code>data/*.json</code> to add models or machines</footer>
 <div id="tip" class="tip" role="tooltip" hidden></div>
-<script type="module" src="assets/app.js?v=0.4"></script>
+<script type="module" src="assets/app.js?v=0.5"></script>
 </body>
 </html>
