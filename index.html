@@ -4,82 +4,99 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Local or cloud? Open-weight vs frontier LLMs — quality, time, cost</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=0.2">
 </head>
 <body>
-<header>
-  <h1>Local or cloud?</h1>
-  <p class="sub">Open-weight vs frontier models: quality, hardware, time and cost of one task. Version 0.1, data as of <span id="asof"></span>.</p>
+<header class="top">
+  <div class="brand">
+    <h1>Local or cloud?</h1>
+    <p class="sub">Open-weight vs frontier LLMs: quality, hardware, time and cost of one task · data as of <span id="asof"></span></p>
+  </div>
+  <nav class="tabs" role="tablist">
+    <a href="#dashboard" role="tab" data-tab="dashboard">Dashboard</a>
+    <a href="#method" role="tab" data-tab="method">Method &amp; data</a>
+  </nav>
 </header>
 
-<section class="tiles" id="tiles"></section>
-
-<section class="controls" aria-label="Parameters">
-  <div class="group">
-    <h2>Hardware</h2>
-    <label>Machine <select id="hw"></select></label>
-    <label>Mode
+<div class="bar" aria-label="Parameters">
+  <div class="bar-main">
+    <label><span>Machine</span><select id="hw"></select></label>
+    <label><span>Mode</span>
       <select id="mode">
         <option value="streaming">Stream experts from SSD (colibri)</option>
-        <option value="fit">Model must fit in RAM/VRAM</option>
+        <option value="fit">Must fit in RAM/VRAM</option>
       </select>
     </label>
-    <label>Power draw under load [W] <input id="power" type="number" min="5" step="5"></label>
-  </div>
-  <div class="group">
-    <h2>Task</h2>
-    <label>Preset <select id="scenario">
+    <label><span>Task</span><select id="scenario">
       <option value="brief">Daily brief: 20 sites → 200 words</option>
       <option value="chat">Short chat answer</option>
       <option value="doc">50-page document analysis</option>
     </select></label>
-    <label>Input tokens <input id="inTok" type="number" min="0" step="100"></label>
-    <label>Answer tokens <input id="outTok" type="number" min="0" step="10"></label>
-    <label>Reasoning tokens <input id="reasonTok" type="number" min="0" step="100"></label>
-    <label>Runs / month <input id="runs" type="number" min="1" step="1"></label>
+    <button id="moreBtn" type="button" aria-expanded="false" aria-controls="more">More settings</button>
   </div>
-  <div class="group">
-    <h2>Prices</h2>
-    <label>Electricity [PLN/kWh, gross] <input id="kwh" type="number" min="0" step="0.01"></label>
-    <label>USD/PLN rate <input id="usd" type="number" min="0" step="0.01"></label>
+  <div class="bar-more" id="more" hidden>
+    <label><span>Power draw [W]</span><input id="power" type="number" min="5" step="5"></label>
+    <label><span>Input tokens</span><input id="inTok" type="number" min="0" step="100"></label>
+    <label><span>Answer tokens</span><input id="outTok" type="number" min="0" step="10"></label>
+    <label><span>Reasoning tokens</span><input id="reasonTok" type="number" min="0" step="100"></label>
+    <label><span>Runs / month</span><input id="runs" type="number" min="1" step="1"></label>
+    <label><span>Electricity [PLN/kWh]</span><input id="kwh" type="number" min="0" step="0.01"></label>
+    <label><span>USD/PLN</span><input id="usd" type="number" min="0" step="0.01"></label>
     <p class="hint" id="usdHint"></p>
   </div>
-</section>
+</div>
 
-<section>
-  <h2>Quality vs cost of one run</h2>
-  <p class="hint">Log-scale X axis. Shape = how the model is run; color repeats it. Hover a point for details. Local points appear only for models that can run on the selected hardware.</p>
-  <div id="chart" class="chart"></div>
-  <div class="legend" id="legend"></div>
-</section>
+<main>
+  <div class="panel" id="tab-dashboard" role="tabpanel">
+    <section class="tiles" id="tiles"></section>
 
-<section>
-  <h2>Table</h2>
-  <div class="tablewrap"><table id="tbl"></table></div>
-</section>
+    <section class="card">
+      <div class="card-head">
+        <h2>Quality vs cost of one run</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div id="chart" class="chart"></div>
+      <p class="hint">Log-scale cost axis. Shape and color show how the model runs. Local points appear only for models that run on the selected machine. Hover for details.</p>
+    </section>
 
-<section>
-  <h2>Calibration: predictions vs colibri measurements</h2>
-  <p class="hint">The “skew” parameter was fitted to a single point (GLM-5.2 on Ryzen AI Max), so that point is not validation. The other points are independent.</p>
-  <div class="tablewrap"><table id="cal"></table></div>
-</section>
+    <section class="card">
+      <div class="card-head">
+        <h2>All models</h2>
+        <label class="toggle"><input type="checkbox" id="onlyRunnable"> Hide models that can't run locally here</label>
+      </div>
+      <div class="tablewrap"><table id="tbl"></table></div>
+      <p class="hint">⇅ = some experts streamed from SSD. Local time = prompt processing + generation (answer + reasoning). Click a header to sort.</p>
+    </section>
+  </div>
 
-<section class="method">
-  <h2>How we estimate (and what we don't know)</h2>
-  <ol>
-    <li><b>Quality [established, but a single metric]:</b> Artificial Analysis Intelligence Index v5.0.2. One number from a test suite. On the hardest tasks (agentic coding, HLE) the gap is often wider than the average suggests. 4-bit quantization usually lowers quality somewhat versus the listed score.</li>
-    <li><b>Generation [established mechanism]:</b> each token requires reading the active weights once. Time/token ≈ Σ bytes from each memory tier / (bandwidth × 0.6) + overhead. MoE: the dense part always sits in the fastest memory, experts form a pool. A hot-expert cache holding fraction c of the pool serves 1−(1−c)<sup>skew</sup> of the accesses.</li>
-    <li><b>Streaming from SSD [speculative]:</b> missing experts are read from NVMe. Skew is calibrated on one measurement.</li>
-    <li><b>Prompt processing [speculative]:</b> 2 × active params × tokens / effective FLOPS. In SSD mode every prompt chunk touches nearly all experts, so the SSD-resident part is read once per chunk. Hardware FLOPS are estimates: replace them with your <code>llama-bench</code> pp512 result.</li>
-    <li><b>Electricity [estimate]:</b> whole-system power under load × time. Defaults are estimates from the TDP class; a wall meter is better. Hardware amortization and idle draw are not included.</li>
-    <li><b>API [established prices]:</b> standard list prices, no caching, no batch (batch: −50% at Anthropic and OpenAI). Claude 4.7+ models use a tokenizer that yields ~30% more tokens for the same text; we apply a 1.3 multiplier.</li>
-  </ol>
-  <h3>Sources</h3>
-  <ul id="sources"></ul>
-</section>
+  <div class="panel" id="tab-method" role="tabpanel" hidden>
+    <section class="card prose">
+      <h2>How we estimate (and what we don't know)</h2>
+      <ol>
+        <li><b>Quality [established, but a single metric]:</b> Artificial Analysis Intelligence Index v5.0.2. One number from a test suite. On the hardest tasks (agentic coding, HLE) the gap is often wider than the average suggests. 4-bit quantization usually lowers quality somewhat versus the listed score.</li>
+        <li><b>Generation [established mechanism]:</b> each token requires reading the active weights once. Time/token ≈ Σ bytes from each memory tier / (bandwidth × 0.6) + overhead. MoE: the dense part always sits in the fastest memory, experts form a pool. A hot-expert cache holding fraction c of the pool serves 1−(1−c)<sup>skew</sup> of the accesses.</li>
+        <li><b>Streaming from SSD [speculative]:</b> missing experts are read from NVMe. Skew is calibrated on one measurement.</li>
+        <li><b>Prompt processing [speculative]:</b> 2 × active params × tokens / effective FLOPS. In SSD mode every prompt chunk touches nearly all experts, so the SSD-resident part is read once per chunk. Hardware FLOPS are estimates: replace them with your <code>llama-bench</code> pp512 result.</li>
+        <li><b>Electricity [estimate]:</b> whole-system power under load × time. Defaults are estimates from the TDP class; a wall meter is better. Hardware amortization and idle draw are not included.</li>
+        <li><b>API [established prices]:</b> standard list prices, no caching, no batch (batch: −50% at Anthropic and OpenAI). Claude 4.7+ models use a tokenizer that yields ~30% more tokens for the same text; we apply a 1.3 multiplier.</li>
+      </ol>
+    </section>
 
-<footer>Code and data: <a href="https://github.com/dryguz/llm-local-vs-frontier">GitHub</a>. The <code>data/*.json</code> files can be edited without touching JS.</footer>
+    <section class="card">
+      <h2>Calibration: predictions vs colibri measurements</h2>
+      <p class="hint">“Skew” was fitted to a single point (GLM-5.2 on Ryzen AI Max), so that point is not validation. The other points are independent.</p>
+      <div class="tablewrap"><table id="cal"></table></div>
+    </section>
+
+    <section class="card prose">
+      <h2>Sources</h2>
+      <ul id="sources"></ul>
+    </section>
+  </div>
+</main>
+
+<footer>Code and data on <a href="https://github.com/dryguz/llm-local-vs-frontier">GitHub</a> · edit <code>data/*.json</code> to add models or machines</footer>
 <div id="tip" class="tip" role="tooltip" hidden></div>
-<script type="module" src="assets/app.js"></script>
+<script type="module" src="assets/app.js?v=0.2"></script>
 </body>
 </html>

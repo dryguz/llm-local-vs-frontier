@@ -1,4 +1,4 @@
-import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js";
+import { taskLocal, taskApi, estimateLocal, DEFAULTS } from "./engine.js?v=0.2";
 
 const SCENARIOS = {
   // 5000 words of source text ≈ 6.7k tokens (≈1.33 tokens/word in English; other languages usually more)
@@ -15,7 +15,7 @@ const KIND = {
 
 const $ = id => document.getElementById(id);
 const [modelsJ, hwJ, calJ] = await Promise.all(
-  ["models", "hardware", "calibration"].map(f => fetch(`data/${f}.json`).then(r => r.json())));
+  ["models", "hardware", "calibration"].map(f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => r.json())));
 const models = modelsJ.models, hardware = hwJ.hardware;
 
 // ---------- controls ----------
@@ -41,7 +41,19 @@ function applyScenario(k) {
 function syncPower() { $("power").value = hardware.find(h => h.id === $("hw").value).power_w; }
 $("scenario").onchange = e => { applyScenario(e.target.value); render(); };
 $("hw").onchange = () => { syncPower(); render(); };
-for (const id of ["mode", "power", "inTok", "outTok", "reasonTok", "runs", "kwh", "usd"]) $(id).oninput = render;
+for (const id of ["mode", "power", "inTok", "outTok", "reasonTok", "runs", "kwh", "usd", "onlyRunnable"]) $(id).oninput = render;
+
+// tabs (hash-routed so links and the back button work)
+function showTab() {
+  const t = location.hash === "#method" ? "method" : "dashboard";
+  document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-selected", a.dataset.tab === t));
+  $("tab-dashboard").hidden = t !== "dashboard"; $("tab-method").hidden = t !== "method";
+}
+window.addEventListener("hashchange", showTab); showTab();
+
+$("moreBtn").onclick = () => {
+  const open = $("more").hidden; $("more").hidden = !open; $("moreBtn").setAttribute("aria-expanded", open);
+};
 
 function state() {
   const hw = { ...hardware.find(h => h.id === $("hw").value), power_w: +$("power").value };
@@ -105,8 +117,9 @@ function table(st, R) {
     cl: loc?.ok ? loc.costPLN : Infinity, ca: api.ok ? api.costPLN : Infinity,
     cam: api.ok ? api.costPLN * st.runs : Infinity, clm: loc?.ok ? loc.costPLN * st.runs : Infinity
   }));
+  if ($("onlyRunnable").checked) data.splice(0, data.length, ...data.filter(d => d.loc?.ok));
   data.sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : a[sortKey] < b[sortKey] ? -1 : 0) * sortDir);
-  const head = `<tr>${cols.map(([l, k]) => `<th data-k="${k}">${l}${k === sortKey ? (sortDir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr>`;
+  const head = `<thead><tr>${cols.map(([l, k]) => `<th data-k="${k}">${l}${k === sortKey ? (sortDir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr></thead>`;
   const body = data.map(d => {
     const k = d.m.open ? "openapi" : "frontier";
     const locCells = !d.m.open ? `<td class="na" colspan="4">closed weights</td>`
@@ -122,8 +135,7 @@ function table(st, R) {
       <td>${d.api.ok ? pln(d.api.costPLN * st.runs) : "—"}</td>
       <td>${d.loc?.ok ? pln(d.loc.costPLN * st.runs) : "—"}</td></tr>`;
   }).join("");
-  $("tbl").innerHTML = head + body +
-    `<caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">⇅ = some experts streamed from SSD (colibri mode). Local time = prompt processing + generation (answer + reasoning). Click a header to sort.</caption>`;
+  $("tbl").innerHTML = head + `<tbody>${body}</tbody>`;
   $("tbl").querySelectorAll("th").forEach(th => th.onclick = () => {
     const k = th.dataset.k; sortDir = k === sortKey ? -sortDir : (k === "name" ? 1 : -1); sortKey = k; render();
   });
@@ -203,8 +215,7 @@ function calibration() {
     const note = p.hw_id === "ryzen-ai-max-128" ? "calibration point (fitted)" : (p.hw_note ?? "");
     return `<tr><td class="l">${p.label}</td><td>${meas}</td><td>${tps(e.decodeTps)}</td><td class="${cls}">${ratio.toFixed(2)}×</td><td class="l">${note}</td></tr>`;
   }).join("");
-  $("cal").innerHTML = `<tr><th>Configuration</th><th>Measured tok/s</th><th>Model tok/s</th><th>Model / measured</th><th>Notes</th></tr>${rowsH}
-    <caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">Known weakness: for small MoE models on CPU the model overestimates speed by about 4–5×. In that regime compute and engine overhead matter, not only memory bandwidth. Parameters: Q4 ≈ ${DEFAULTS.bytesPerParam} B/param, memory efficiency ${DEFAULTS.memEff}, SSD ${DEFAULTS.ssdEff}, skew ${DEFAULTS.skew}.</caption>`;
+  $("cal").innerHTML = `<caption style="caption-side:bottom;text-align:left;color:var(--ink2);padding-top:8px">Known weakness: for small MoE models on CPU the model overestimates speed by about 4–5×. In that regime compute and engine overhead matter, not only memory bandwidth. Parameters: Q4 ≈ ${DEFAULTS.bytesPerParam} B/param, memory efficiency ${DEFAULTS.memEff}, SSD ${DEFAULTS.ssdEff}, skew ${DEFAULTS.skew}.</caption><thead><tr><th class="l">Configuration</th><th>Measured tok/s</th><th>Model tok/s</th><th>Model / measured</th><th class="l">Notes</th></tr></thead><tbody>${rowsH}</tbody>`;
 }
 
 function sources() {
