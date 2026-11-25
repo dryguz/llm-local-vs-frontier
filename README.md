@@ -1,51 +1,60 @@
-# Lokalnie czy w chmurze?
+# Local or cloud?
 
 **🔗 Live page: https://dryguz.github.io/llm-local-vs-frontier/**
 
-Statyczny dashboard (GitHub Pages) porównujący modele open-weight z modelami frontier w czterech wymiarach:
+A static dashboard (GitHub Pages) comparing open-weight and frontier LLMs along four dimensions:
 
-1. **Jakość**: Artificial Analysis Intelligence Index v5.0.2 oraz cztery widoki zadaniowe: Coding (FrontierCode 2.0 + Terminal-Bench 4.1), Agentic (AutomationBench), Long documents (GDP.pdf), Factual reliability (Omniscience net score).
-2. **Sprzęt**: czy model się mieści (RAM/VRAM) albo czy da się go uruchomić ze strumieniowaniem ekspertów z SSD (colibri).
-3. **Czas**: szacowana prędkość generowania i przetwarzania promptu → czas konkretnego zadania.
-4. **Koszt**: prąd lokalnie vs tokeny w API (Anthropic, OpenAI, hosting modeli open-weight), w USD, EUR lub PLN (kursy ECB z Frankfurter, NBP jako zapas).
+1. **Quality**: Artificial Analysis Intelligence Index v5.0.2, plus task-specific views built from its component evaluations: Coding (FrontierCode-AA 2.0 + Terminal-Bench 4.1), Agentic workflows (AutomationBench-AA), Long documents (GDP.pdf) and Knowledge reliability without sources (AA-Omniscience net score).
+2. **Hardware**: whether a model fits in RAM/VRAM, or can run with experts streamed from SSD (colibri-style).
+3. **Time**: estimated generation and prompt-processing speed, turned into the time one task takes.
+4. **Cost**: local electricity vs API tokens (Anthropic, OpenAI, hosted open-weight models), in USD, EUR or PLN.
 
-## Uruchomienie
+A **use case** selector (daily brief, long document, coding, agentic workflow, quick question, general use) sets both the token profile and the most relevant quality metric.
+
+## Run locally
 
 ```bash
-python3 -m http.server 8000   # potem http://localhost:8000
-node tests/calibrate.mjs      # porównanie silnika z pomiarami colibri
-node tests/calibrate.mjs 8    # to samo z innym parametrem skew
+python3 -m http.server 8000   # then open http://localhost:8000
+node tests/calibrate.mjs      # compare the engine with colibri measurements
+node tests/calibrate.mjs 8    # same, with a different skew parameter
 ```
 
-GitHub Pages: Settings → Pages → Deploy from branch → `main` / root.
+GitHub Pages: Settings → Pages → Deploy from a branch → `main` / root.
 
-## Struktura
+## Layout
 
-| Plik | Zawartość |
+| File | Contents |
 |---|---|
-| `data/models.json` | modele: indeks AA, parametry całkowite/aktywne, ceny API, wsparcie colibri |
-| `data/hardware.json` | maszyny: warstwy pamięci (pojemność, przepustowość), SSD, FLOPS, pobór mocy |
-| `data/calibration.json` | pomiary tok/s z README colibri |
-| `assets/engine.js` | silnik szacunków (czyste funkcje, działa też w Node) |
-| `assets/app.js` | interfejs |
+| `data/models.json` | models: AA index, per-benchmark scores, total/active params, API prices, colibri support |
+| `data/hardware.json` | machines: memory tiers (capacity, bandwidth), SSD, FLOPS, power draw |
+| `data/calibration.json` | decode tok/s measurements from the colibri README |
+| `data/harness.json` | AA Coding Agent Index for the same model across coding-agent harnesses |
+| `assets/engine.js` | estimation engine (pure functions, also runs in Node) |
+| `assets/app.js` | UI |
 
-## Model w skrócie
+All data files can be edited without touching JavaScript. Each one carries its sources and the date it was read in `_meta`.
 
-- **Generowanie** (ustalony mechanizm): czas/token ≈ Σ bajty aktywnych wag z warstwy pamięci / (przepustowość × 0,6) + narzut.
-- **MoE + SSD** (spekulatywne): część gęsta trafia do najszybszej pamięci, eksperci do puli. Gorący cache obsługuje ułamek c puli jako `1-(1-c)^skew` odwołań; skew = 6,5 dopasowany do jednego pomiaru (GLM-5.2, Ryzen AI Max+ 395).
-- **Prompt** (spekulatywne): 2 × aktywne parametry × tokeny / efektywne FLOPS, a w trybie SSD dodatkowo odczyt puli z SSD raz na fragment promptu (2048 tokenów).
-- **Prąd**: moc × czas × cena kWh. Bez amortyzacji sprzętu.
+## How the estimates work
 
-## Znane ograniczenia (v0.1)
+- **Generation** (established mechanism): time/token ≈ Σ bytes of active weights read from each memory tier / (bandwidth × 0.6) + overhead.
+- **MoE + SSD streaming** (speculative): the dense part goes to the fastest memory, experts form a pool. A hot-expert cache holding fraction c of the pool serves `1-(1-c)^skew` of the accesses; skew = 6.5 is fitted to a single measurement (GLM-5.2 on Ryzen AI Max+ 395).
+- **Prompt processing** (speculative): 2 × active params × tokens / effective FLOPS; in SSD mode the SSD-resident pool is also read once per 2048-token prompt chunk.
+- **Electricity**: power × time × price per kWh. Hardware amortization is not included.
+- **Currency**: everything is computed in USD (API list prices) and converted with ECB reference rates (Frankfurter), with NBP as fallback. Default electricity price: Poland 2026 G11 average, 1.04 PLN/kWh.
 
-- Dla małych MoE na CPU silnik zawyża prędkość około 4–5× (reżim obliczeniowy i narzut silnika nie są modelowane).
-- FLOPS i pobór mocy w `hardware.json` to szacunki. Warto je zastąpić pomiarami (`llama-bench`, watomierz).
-- Brak amortyzacji sprzętu, multi-GPU, cache promptów i cen batch.
-- Indeks AA jest jedną liczbą. Na najtrudniejszych zadaniach luka bywa większa.
+## Known limitations (v0.x)
 
-## Do zrobienia
+- For small MoE models on CPU the engine overestimates speed by about 4–5× (compute and engine overhead are not modelled).
+- FLOPS and power draw in `hardware.json` are estimates; replace them with measurements (`llama-bench`, a wall meter).
+- Quality scores are published scores for AA's setup. Local quantization, sampling settings, chat templates and harness choice can lower them; none of this is modelled. On coding, AA measured a 28–35% drop between the best and worst harness for the same model.
+- No AA benchmark measures faithfulness to provided sources directly; GDP.pdf is used as the closest proxy for summarising tasks.
+- Per-benchmark values were read from AA's rendered charts and must be updated by hand.
+- No hardware amortization, multi-GPU, prompt caching or batch pricing.
 
-- [ ] Automatyczna aktualizacja danych z API Artificial Analysis (GitHub Action).
-- [ ] Amortyzacja sprzętu (cena / lata użytkowania) jako opcjonalny składnik kosztu.
-- [ ] Import własnych pomiarów (`llama-bench` JSON).
-- [ ] Osobna kalibracja dla CPU (składnik obliczeniowy w decode).
+## To do
+
+- [ ] Hardware amortization (price / years of use) as an optional cost component.
+- [ ] Import your own measurements (`llama-bench` JSON).
+- [ ] A separate CPU calibration (compute term in decode).
+- [ ] Automated data refresh (GitHub Action) where a source offers an API.
+- [ ] Harness comparison for more open-weight models once AA publishes them.
